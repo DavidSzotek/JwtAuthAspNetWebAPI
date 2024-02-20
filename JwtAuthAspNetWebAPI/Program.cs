@@ -1,3 +1,4 @@
+using JwtAuthAspNetWebAPI.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -11,9 +12,9 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddDbContext<DbContext>(options =>
+builder.Services.AddDbContext<UserDbContext>(options =>
 {
-    var connectionString = builder.Configuration.GetConnectionString("local");
+    var connectionString = builder.Configuration.GetConnectionString("Work");
     options.UseSqlServer(connectionString);
 });
 
@@ -21,7 +22,7 @@ builder.Services.AddDbContext<DbContext>(options =>
 
 builder.Services
     .AddIdentity<IdentityUser, IdentityRole>()
-    .AddEntityFrameworkStores<DbContext>()
+    .AddEntityFrameworkStores<UserDbContext>()
     .AddDefaultTokenProviders();
 
 // Configuring Identity
