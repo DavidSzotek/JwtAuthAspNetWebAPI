@@ -26,6 +26,23 @@ namespace JwtAuthAspNetWebAPI.Controllers
             _configuration = configuration;
         }
 
+        private string GenerateNewJWToken(List<Claim> claims)
+        {
+            var authSecret = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Secret"]));
+
+            var tokenObject = new JwtSecurityToken(
+                    issuer: _configuration["JWT:ValidIssuer"],
+                    audience: _configuration["JWT:ValidAudience"],
+                    expires: DateTime.Now.AddDays(1),
+                    claims: claims,
+                    signingCredentials: new SigningCredentials(authSecret, SecurityAlgorithms.HmacSha256)
+                );
+
+            string token = new JwtSecurityTokenHandler().WriteToken(tokenObject);
+
+            return token;
+        }
+
         // Route for Seeding my roles to DB
         [HttpPost]
         [Route("seed-roles")]
@@ -115,22 +132,36 @@ namespace JwtAuthAspNetWebAPI.Controllers
             return Ok(token);
         }
 
-        private string GenerateNewJWToken(List<Claim> claims)
+        [HttpPost]
+        [Route("make-admin")]
+        public async Task<IActionResult> MakeAdmin([FromBody] UpdatePermissionDto updatePermissionDto)
         {
-            var authSecret = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Secret"]));
+            var user = await _userManager.FindByNameAsync(updatePermissionDto.UserName);
 
-            var tokenObject = new JwtSecurityToken(
-                    issuer: _configuration["JWT:ValidIssuer"],
-                    audience: _configuration["JWT:ValidAudience"],
-                    expires: DateTime.Now.AddDays(1),
-                    claims: claims,
-                    signingCredentials: new SigningCredentials(authSecret, SecurityAlgorithms.HmacSha256)
-                );
+            if (user is null)
+            {
+                return BadRequest("Invalid user name!");
+            }
 
-            string token = new JwtSecurityTokenHandler().WriteToken(tokenObject);
+            await _userManager.AddToRoleAsync(user, StaticUserRoles.ADMIN);
 
-            return token;
+            return Ok("User is now an ADMIN");
         }
 
+        [HttpPost]
+        [Route("make-owner")]
+        public async Task<IActionResult> MakeOwner([FromBody] UpdatePermissionDto updatePermissionDto)
+        {
+            var user = await _userManager.FindByNameAsync(updatePermissionDto.UserName);
+
+            if (user is null)
+            {
+                return BadRequest("Invalid user name!");
+            }
+
+            await _userManager.AddToRoleAsync(user, StaticUserRoles.OWNER);
+
+            return Ok("User is now an OWNER");
+        }
     }
 }
